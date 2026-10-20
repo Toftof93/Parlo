@@ -271,6 +271,7 @@ function Deploy({ source }: { source: string }) {
   const [netId, setNetId] = useState<number>(NETWORKS[0].id);
   const [status, setStatus] = useState<{ text: string; error?: boolean } | null>(null);
   const [deployed, setDeployed] = useState<{ address: Address; tx: Hex; chainId: number } | null>(null);
+  const [deploying, setDeploying] = useState(false);
 
   async function run() {
     setCompiling(true);
@@ -301,8 +302,11 @@ function Deploy({ source }: { source: string }) {
   const net = NETWORKS.find((n) => n.id === netId)!;
 
   async function deploy() {
-    if (!target) return;
+    if (!target || deploying) return;
+    setDeployed(null);
+    setStatus(null);
     if (!window.ethereum) return setStatus({ text: "No wallet found. Open this page in your wallet's browser or install Rabby/MetaMask.", error: true });
+    setDeploying(true);
     try {
       const values = ctorInputs.map((inp, i) => parseArg(inp, args[`${i}`] ?? ""));
       const wallet = createWalletClient({ chain: net, transport: custom(window.ethereum) });
@@ -323,6 +327,8 @@ function Deploy({ source }: { source: string }) {
     } catch (e) {
       const msg = e instanceof Error ? e.message.split("\n")[0] : String(e);
       setStatus({ text: /reject|denied/i.test(msg) ? "You cancelled in your wallet." : msg, error: true });
+    } finally {
+      setDeploying(false);
     }
   }
 
@@ -391,8 +397,8 @@ function Deploy({ source }: { source: string }) {
             </select>
           </label>
           {netId === 4663 && <p className="warn-note">Mainnet uses real ETH. Parlo writes careful code, but it isn't audited. Test on testnet first.</p>}
-          <button className="btn primary wide" onClick={deploy}>
-            Deploy {target.name}
+          <button className="btn primary wide" onClick={deploy} disabled={deploying}>
+            {deploying ? "Deploying…" : `Deploy ${target.name}`}
           </button>
           <p className="muted small">Your keys stay in your wallet. Nothing is deployed until you sign.</p>
         </>
