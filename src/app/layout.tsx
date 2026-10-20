@@ -6,7 +6,7 @@ import "@fontsource/instrument-serif/400-italic.css";
 import "./globals.css";
 import { Mark } from "@/components/Mark";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://useparlo.xyz";
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://parlo-sage.vercel.app";
 const description = "Describe a smart contract in plain English. Parlo writes it, explains every line, compiles it and helps you deploy it to Robinhood Chain.";
 
 export const metadata: Metadata = {
