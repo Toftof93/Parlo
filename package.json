@@ -1,0 +1,28 @@
+{
+  "name": "parlo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI smart contract studio for Robinhood Chain. Speak your contract into existence.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --experimental-strip-types --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.136.0",
+    "@fontsource/instrument-serif": "^5.3.0",
+    "@openzeppelin/contracts": "^5.1.0",
+    "geist": "^1.8.1",
+    "next": "^15.5.28",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "solc": "0.8.28",
+    "viem": "^2.57.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "typescript": "^5.9.3"
+  }
+}
