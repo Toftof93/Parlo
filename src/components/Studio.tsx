@@ -250,7 +250,7 @@ function Settings({ tpl, onChange }: { tpl: Tpl; onChange: (v: Values) => void }
             <input
               value={tpl.values[f.key] ?? ""}
               inputMode={f.kind === "text" ? "text" : "decimal"}
-              placeholder={f.hint}
+              placeholder={f.hint ?? `Default: ${t.defaults[f.key]}`}
               onChange={(e) => onChange({ ...tpl.values, [f.key]: e.target.value })}
             />
           </label>
