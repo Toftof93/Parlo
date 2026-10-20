@@ -9,7 +9,16 @@ const IDEAS = [
   "Release my team's tokens slowly over 12 months",
 ];
 
-export function HeroPrompt() {
+const QUICK = [
+  ["token", "Token"],
+  ["tax-token", "Token with a tax"],
+  ["nft", "NFT drop"],
+  ["vesting", "Vesting"],
+  ["vault", "Vault"],
+  ["airdrop", "Airdrop"],
+];
+
+export function HeroPrompt({ aiEnabled }: { aiEnabled: boolean }) {
   const [value, setValue] = useState("");
   const [ph, setPh] = useState(IDEAS[0]);
 
@@ -18,6 +27,21 @@ export function HeroPrompt() {
     const id = setInterval(() => setPh(IDEAS[(i = (i + 1) % IDEAS.length)]), 3200);
     return () => clearInterval(id);
   }, []);
+
+  if (!aiEnabled)
+    return (
+      <div className="hero-prompt quick">
+        <p className="quick-title">Start from a template, set it up in plain boxes, deploy from your wallet.</p>
+        <div className="hero-templates">
+          {QUICK.map(([id, label]) => (
+            <a key={id} href={`/studio?template=${id}`}>
+              {label}
+            </a>
+          ))}
+        </div>
+        <p className="muted small quick-note">Writing any contract from a sentence is coming soon.</p>
+      </div>
+    );
 
   return (
     <form action="/studio" className="hero-prompt">

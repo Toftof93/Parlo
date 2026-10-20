@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPublicClient, createWalletClient, custom, http, type Abi, type Address, type EIP1193Provider, type Hex } from "viem";
-import { TEMPLATES } from "@/lib/templates";
+import { TEMPLATES, offlineLaunchKit, type Values } from "@/lib/templates";
 import { splitReply, contractName } from "@/lib/extract";
 import { NETWORKS } from "@/lib/chains";
 import { parseArg, type AbiInput } from "@/lib/args";
@@ -11,6 +11,7 @@ type Msg = { role: "you" | "parlo"; text: string };
 type Compiled = { name: string; abi: Abi; bytecode: Hex; size: number };
 type Diagnostic = { severity: "error" | "warning"; message: string; line?: number };
 type Tab = "code" | "deploy" | "launch";
+type Tpl = { id: string; values: Values };
 
 const STORE = "parlo:project";
 
@@ -20,13 +21,14 @@ declare global {
   }
 }
 
-export function Studio({ initialBrief }: { initialBrief?: string }) {
+export function Studio({ initialBrief, initialTemplate, aiEnabled }: { initialBrief?: string; initialTemplate?: string; aiEnabled: boolean }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [source, setSource] = useState("");
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<Tab>("code");
   const [explain, setExplain] = useState<{ line: number; text?: string; error?: string } | null>(null);
+  const [tpl, setTpl] = useState<Tpl | null>(null);
   const started = useRef(false);
 
   // Restore the last project, or start from the brief passed in the URL.
@@ -35,28 +37,36 @@ export function Studio({ initialBrief }: { initialBrief?: string }) {
     started.current = true;
     try {
       const saved = JSON.parse(localStorage.getItem(STORE) ?? "null");
-      if (saved?.source && !initialBrief) {
+      if (saved?.source && !initialBrief && !initialTemplate) {
         setSource(saved.source);
         setMessages(saved.messages ?? []);
+        setTpl(saved.tpl ?? null);
       }
     } catch {}
-    if (initialBrief) void send(initialBrief, "");
+    if (initialTemplate && TEMPLATES.some((t) => t.id === initialTemplate)) applyTemplate(initialTemplate);
+    else if (initialBrief) void send(initialBrief, "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORE, JSON.stringify({ source, messages }));
+      localStorage.setItem(STORE, JSON.stringify({ source, messages, tpl }));
     } catch {}
-  }, [source, messages]);
+  }, [source, messages, tpl]);
 
   async function send(text: string, current = source) {
     const brief = text.trim();
     if (!brief || busy) return;
+    if (!aiEnabled) {
+      setInput("");
+      setMessages((m) => [...m, { role: "you", text: brief }, { role: "parlo", text: "- Writing from plain English switches on soon.\n- For now, start from a template and set it up with simple boxes. It's free." }]);
+      return;
+    }
     setInput("");
     setBusy(true);
     setTab("code");
     setExplain(null);
+    setTpl(null);
     setMessages((m) => [...m, { role: "you", text: brief }, { role: "parlo", text: "" }]);
     const update = (t: string) => setMessages((m) => [...m.slice(0, -1), { role: "parlo", text: t }]);
     try {
@@ -90,12 +100,15 @@ export function Studio({ initialBrief }: { initialBrief?: string }) {
 
   function applyTemplate(id: string) {
     const t = TEMPLATES.find((x) => x.id === id)!;
-    setSource(t.source);
-    setMessages((m) => [...m, { role: "you", text: `Start from: ${t.name}` }, { role: "parlo", text: `- ${t.blurb}\n- Ask me to change anything: names, numbers, rules.` }]);
+    setTpl({ id, values: { ...t.defaults } });
+    setSource(t.build(t.defaults));
+    const next = t.fields.length ? "Set it up with the boxes above the code." : "It works as it is. No settings needed.";
+    setMessages((m) => [...m, { role: "you", text: `Start from: ${t.name}` }, { role: "parlo", text: `- ${t.blurb}\n- ${next}${aiEnabled ? "\n- Or ask me to change anything." : ""}` }]);
     setTab("code");
   }
 
   function reset() {
+    setTpl(null);
     setSource("");
     setMessages([]);
     setExplain(null);
@@ -103,6 +116,7 @@ export function Studio({ initialBrief }: { initialBrief?: string }) {
 
   async function explainLine(line: number) {
     if (!source) return;
+    if (!aiEnabled) return setExplain({ line, error: "Line-by-line explanations switch on soon, with Parlo AI." });
     setExplain({ line });
     try {
       const res = await fetch("/api/explain", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ source, line }) });
@@ -130,7 +144,7 @@ export function Studio({ initialBrief }: { initialBrief?: string }) {
           {messages.length === 0 ? (
             <div className="empty">
               <p className="empty-title">What should your contract do?</p>
-              <p className="muted">Describe it like you'd text a developer, or start from one of these.</p>
+              <p className="muted">{aiEnabled ? "Describe it like you'd text a developer, or start from one of these." : "Pick a starting point and set it up with simple boxes. Free, no code needed."}</p>
               <div className="templates">
                 {TEMPLATES.map((t) => (
                   <button key={t.id} onClick={() => applyTemplate(t.id)}>
@@ -141,15 +155,32 @@ export function Studio({ initialBrief }: { initialBrief?: string }) {
               </div>
             </div>
           ) : (
-            messages.map((m, i) => (
-              <div key={i} className={`bubble ${m.role}`}>
-                {m.role === "parlo" ? <Notes text={m.text || "Thinking…"} /> : m.text}
-              </div>
-            ))
+            <>
+              {messages.map((m, i) => (
+                <div key={i} className={`bubble ${m.role}`}>
+                  {m.role === "parlo" ? <Notes text={m.text || "Thinking…"} /> : m.text}
+                </div>
+              ))}
+              {!aiEnabled && !source && (
+                <div className="templates">
+                  {TEMPLATES.map((t) => (
+                    <button key={t.id} onClick={() => applyTemplate(t.id)}>
+                      <b>{t.name}</b>
+                      <span>{t.blurb}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
+        {!aiEnabled && (
+          <p className="soon">
+            <b>Coming soon:</b> describe any contract in plain English and Parlo writes it.
+          </p>
+        )}
         <form
-          className="composer"
+          className={`composer ${aiEnabled ? "" : "off"}`}
           onSubmit={(e) => {
             e.preventDefault();
             void send(input);
@@ -185,10 +216,46 @@ export function Studio({ initialBrief }: { initialBrief?: string }) {
             Launch kit
           </button>
         </div>
+        {tab === "code" && tpl && (
+          <Settings
+            tpl={tpl}
+            onChange={(values) => {
+              const t = TEMPLATES.find((x) => x.id === tpl.id)!;
+              setTpl({ id: tpl.id, values });
+              setSource(t.build(values));
+            }}
+          />
+        )}
         {tab === "code" && <Editor source={source} onChange={setSource} busy={busy} onExplain={explainLine} explain={explain} onCloseExplain={() => setExplain(null)} />}
         {tab === "deploy" && <Deploy source={source} />}
-        {tab === "launch" && <LaunchKit source={source} defaultName={name} />}
+        {tab === "launch" && <LaunchKit source={source} defaultName={tpl?.values.name ?? name} aiEnabled={aiEnabled} tpl={tpl} />}
       </section>
+    </div>
+  );
+}
+
+function Settings({ tpl, onChange }: { tpl: Tpl; onChange: (v: Values) => void }) {
+  const t = TEMPLATES.find((x) => x.id === tpl.id)!;
+  if (!t.fields.length) return null;
+  return (
+    <div className="settings">
+      <div className="row">
+        <span className="eyebrow">Settings · {t.name}</span>
+        <span className="muted small">Changing these rewrites the code</span>
+      </div>
+      <div className="settings-grid">
+        {t.fields.map((f) => (
+          <label key={f.key} className="field">
+            <span>{f.label}</span>
+            <input
+              value={tpl.values[f.key] ?? ""}
+              inputMode={f.kind === "text" ? "text" : "decimal"}
+              placeholder={f.hint}
+              onChange={(e) => onChange({ ...tpl.values, [f.key]: e.target.value })}
+            />
+          </label>
+        ))}
+      </div>
     </div>
   );
 }
@@ -426,15 +493,20 @@ function Deploy({ source }: { source: string }) {
   );
 }
 
-function LaunchKit({ source, defaultName }: { source: string; defaultName?: string }) {
+function LaunchKit({ source, defaultName, aiEnabled, tpl }: { source: string; defaultName?: string; aiEnabled: boolean; tpl: Tpl | null }) {
   const [name, setName] = useState(defaultName ?? "");
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function run() {
-    setBusy(true);
     setError("");
+    if (!aiEnabled) {
+      const t = tpl && TEMPLATES.find((x) => x.id === tpl.id);
+      if (!t) return setError("Without Parlo AI, the Launch Kit works for templates. Start from a template first.");
+      return setText(offlineLaunchKit(name, t, tpl!.values));
+    }
+    setBusy(true);
     try {
       const res = await fetch("/api/launchkit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ source, name }) });
       const j = await res.json();
@@ -461,7 +533,7 @@ function LaunchKit({ source, defaultName }: { source: string; defaultName?: stri
 
   return (
     <div className="launch">
-      <p className="muted">Parlo reads your contract and writes your tagline, X bio and launch posts. Honest copy: no price promises.</p>
+      <p className="muted">{aiEnabled ? "Parlo reads your contract and writes your tagline, X bio and launch posts." : "Parlo writes your tagline, X bio and launch posts from your template settings."} Honest copy: no price promises.</p>
       <div className="row">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Project name" />
         <button className="btn primary" onClick={run} disabled={busy}>

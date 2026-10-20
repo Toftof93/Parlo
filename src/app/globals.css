@@ -163,3 +163,16 @@ button { cursor: pointer; }
 .kit p { margin: 8px 0 0; white-space: pre-wrap; font-size: 14.5px; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0s !important; } }
+
+.settings { margin: 10px 10px 0; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 10px; }
+.settings .field input { background: var(--card); }
+.soon { margin: 0; padding: 10px 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); background: var(--accent-soft); }
+.soon b { color: var(--accent); }
+.composer.off textarea { opacity: 0.6; }
+.hero-templates { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
+.hero-templates a { border: 1px solid var(--line-2); background: var(--card); border-radius: 999px; padding: 7px 14px; font-size: 13.5px; }
+.hero-templates a:hover { border-color: var(--accent); color: var(--accent); }
+.hero-prompt.quick { text-align: center; padding: 20px; }
+.quick-title { margin: 0; font-size: 16px; color: var(--ink-2); }
+.quick-note { margin: 12px 0 0; }

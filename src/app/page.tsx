@@ -26,7 +26,7 @@ export default function Home() {
           <em>into existence.</em>
         </h1>
         <p className="lead">Describe what you want in plain English. Parlo writes the Solidity, explains every line, compiles it and gets it ready for your wallet to deploy.</p>
-        <HeroPrompt />
+        <HeroPrompt aiEnabled={Boolean(process.env.ANTHROPIC_API_KEY)} />
         <p className="trust">
           <span className="dot" /> Your keys stay in your wallet. Nothing goes on-chain until you sign.
         </p>
