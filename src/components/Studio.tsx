@@ -13,7 +13,7 @@ type Diagnostic = { severity: "error" | "warning"; message: string; line?: numbe
 type Tab = "code" | "deploy" | "launch";
 type Tpl = { id: string; values: Values };
 
-const STORE = "parlo:project";
+const STORE = "parlo:project:v2"; // bump when the saved shape changes
 
 declare global {
   interface Window {
