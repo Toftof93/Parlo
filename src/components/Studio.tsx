@@ -314,7 +314,10 @@ function Deploy({ source }: { source: string }) {
       setStatus({ text: "Switching network…" });
       try {
         await wallet.switchChain({ id: net.id });
-      } catch {
+      } catch (e) {
+        // Only add the network when the wallet doesn't know it; a cancelled switch stops here.
+        const code = (e as { code?: number; cause?: { code?: number } }).code ?? (e as { cause?: { code?: number } }).cause?.code;
+        if (code !== 4902) throw e;
         await wallet.addChain({ chain: net });
       }
       setStatus({ text: "Confirm the deployment in your wallet…" });
