@@ -1,21 +1,19 @@
 import { HeroPrompt } from "@/components/HeroPrompt";
 
-const CODE = [
-  ["k", "contract "],
-  ["t", "TeamVesting"],
-  ["p", " {"],
-  ["n", ""],
-  ["c", "    /// Tokens unlock a little every day for 12 months"],
-  ["k", "    uint64 public immutable "],
-  ["v", "duration = 365 days;"],
-  ["n", ""],
-  ["k", "    function "],
-  ["f", "release() external {"],
-  ["p", "        uint256 amount = vested() - released;"],
-  ["p", "        token.safeTransfer(beneficiary, amount);"],
-  ["p", "    }"],
-  ["p", "}"],
-] as const;
+// Each line is a list of [style, text] segments.
+const CODE: [string, string][][] = [
+  [["k", "contract "], ["t", "TeamVesting"], ["p", " {"]],
+  [],
+  [["c", "    /// Unlocks a little every day for 12 months"]],
+  [["k", "    uint64 public immutable "], ["v", "duration = 365 days;"]],
+  [],
+  [["k", "    function "], ["f", "release"], ["p", "() external {"]],
+  [["p", "        uint256 amount = vested() - released;"]],
+  [["p", "        released += amount;"]],
+  [["p", "        token.safeTransfer(beneficiary, amount);"]],
+  [["p", "    }"]],
+  [["p", "}"]],
+];
 
 export default function Home() {
   return (
@@ -56,14 +54,18 @@ export default function Home() {
               </div>
             </div>
             <pre className="demo-code">
-              {CODE.map(([k, t], i) => (
-                <span key={i} className={`ln ${k}`} style={{ animationDelay: `${0.9 + i * 0.12}s` }}>
+              {CODE.map((segs, i) => (
+                <span key={i} className="ln" style={{ animationDelay: `${0.9 + i * 0.14}s` }}>
                   <em>{i + 1}</em>
-                  {t}
+                  {segs.map(([k, t], j) => (
+                    <span key={j} className={k}>
+                      {t}
+                    </span>
+                  ))}
                 </span>
               ))}
               <span className="explain-pop" style={{ animationDelay: "3.2s" }}>
-                <b>Line 11</b> Sends the unlocked tokens to your team’s wallet.
+                <b>Line 9</b> Sends the unlocked tokens to your team’s wallet.
               </span>
             </pre>
           </div>
@@ -107,6 +109,10 @@ export default function Home() {
         <div className="feature">
           <h3>Templates that compile</h3>
           <p>Token, tax token, vault, airdrop, vesting, NFT drop. Every one tested and built on OpenZeppelin.</p>
+        </div>
+        <div className="feature">
+          <h3>Your keys, your contract</h3>
+          <p>Parlo never touches your wallet. You review everything and sign the deployment yourself.</p>
         </div>
         <div className="feature">
           <h3>Share the moment</h3>

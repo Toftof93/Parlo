@@ -390,7 +390,7 @@ function Deploy({ source }: { source: string }) {
               ))}
             </select>
           </label>
-          {netId !== NETWORKS[0].id && <p className="warn-note">Mainnet uses real ETH. Parlo writes careful code, but it isn't audited. Test on testnet first.</p>}
+          {netId === 4663 && <p className="warn-note">Mainnet uses real ETH. Parlo writes careful code, but it isn't audited. Test on testnet first.</p>}
           <button className="btn primary wide" onClick={deploy}>
             Deploy {target.name}
           </button>
