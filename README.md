@@ -18,17 +18,17 @@ Describe a contract in plain English. Parlo writes the Solidity, explains any li
 
 ```bash
 npm install
-cp .env.example .env.local   # add ANTHROPIC_API_KEY
+cp .env.example .env.local   # add OPENAI_API_KEY
 npm run dev                  # http://localhost:3000
 npm test
 ```
 
 | Variable | Purpose |
 |---|---|
-| `ANTHROPIC_API_KEY` | Turns on writing, explanations and the Launch Kit. Without it, templates, compile and deploy still work. |
+| `OPENAI_API_KEY` | Turns on writing, explanations and the Launch Kit. Without it, templates, compile and deploy still work. |
 | `PARLO_DAILY_LIMIT` | Free AI requests per visitor per day (default 10) |
 | `NEXT_PUBLIC_SITE_URL` | Public URL for share links (default https://useparlo.xyz) |
 
-The AI runs on Claude Opus 5.5 with server-side refusal fallbacks and prompt caching on the fixed system prompts.
+The AI runs on OpenAI (default `gpt-5.4-mini`; set `OPENAI_MODEL` to change it).
 
 AI-written code is not audited. Review and test on testnet before using real funds.

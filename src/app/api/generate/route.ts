@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { aiReady, streamContract } from "@/lib/ai";
 import { allow } from "@/lib/limit";
 
@@ -12,23 +12,21 @@ export async function POST(req: Request) {
   if (brief.length > 4000 || (current?.length ?? 0) > 60000) return Response.json({ error: "That's too long. Keep the brief under 4,000 characters." }, { status: 400 });
   if (!allow(req)) return Response.json({ error: "You've hit today's free limit. Come back tomorrow." }, { status: 429 });
 
-  const stream = streamContract(brief.trim(), current);
+  const abort = new AbortController();
   const enc = new TextEncoder();
   const body = new ReadableStream({
     async start(ctrl) {
-      stream.on("text", (t) => ctrl.enqueue(enc.encode(t)));
       try {
-        const msg = await stream.finalMessage();
-        if (msg.stop_reason === "refusal") ctrl.enqueue(enc.encode("\n\n- Parlo can't write this one. Try describing it differently."));
-        else if (msg.stop_reason === "max_tokens") ctrl.enqueue(enc.encode("\n\n- The contract got too long and was cut off. Ask for a simpler version."));
+        for await (const t of streamContract(brief.trim(), current, abort.signal)) ctrl.enqueue(enc.encode(t));
       } catch (err) {
-        const msg = err instanceof Anthropic.RateLimitError ? "Parlo is busy right now. Try again in a minute." : "Something went wrong writing the contract. Try again.";
+        if (abort.signal.aborted) return;
+        const msg = err instanceof OpenAI.RateLimitError ? "Parlo is busy right now. Try again in a minute." : "Something went wrong writing the contract. Try again.";
         ctrl.enqueue(enc.encode(`\n\n- ${msg}`));
       }
       ctrl.close();
     },
     cancel() {
-      stream.abort();
+      abort.abort();
     },
   });
   return new Response(body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });

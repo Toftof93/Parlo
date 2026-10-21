@@ -1,13 +1,31 @@
 import "server-only";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
-export const MODEL = "claude-opus-5-5";
-export const aiReady = () => Boolean(process.env.ANTHROPIC_API_KEY);
+// Any OpenAI chat model works; set OPENAI_MODEL in Vercel to change it.
+export const MODEL = process.env.OPENAI_MODEL || "gpt-5.4-mini";
+export const aiReady = () => Boolean(process.env.OPENAI_API_KEY);
 
-let client: Anthropic | undefined;
-const getClient = () => (client ??= new Anthropic());
+let client: OpenAI | undefined;
+const getClient = () => (client ??= new OpenAI());
 
-// Kept byte-for-byte stable so it is cached across requests.
+// Reasoning models take an effort level; older models reject it.
+const effort = (level: "low" | "medium") => (/^(gpt-5|o\d)/.test(MODEL) ? { reasoning_effort: level } : {});
+
+async function ask(system: string, user: string, maxTokens: number) {
+  const res = await getClient().chat.completions.create({
+    model: MODEL,
+    max_completion_tokens: maxTokens,
+    ...effort("low"),
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+  });
+  const choice = res.choices[0];
+  return { text: (choice?.message.content ?? "").trim(), refused: Boolean(choice?.message.refusal) };
+}
+
+// Kept stable so the provider can cache it across requests.
 const WRITER = `You are Parlo, a careful Solidity engineer who turns plain-English briefs into smart contracts for Robinhood Chain (an EVM chain, Arbitrum Orbit L2, ETH for gas).
 
 Rules for every contract you write:
@@ -24,19 +42,33 @@ Reply format, always:
 
 When you are given an existing contract and a change request, apply the change and return the complete updated file in the same format. If a request is unsafe or impossible on-chain, say so in the notes and return the closest safe version.`;
 
-export function streamContract(brief: string, current?: string) {
+// Yields the reply as it is written, then a closing note if it was cut short.
+export async function* streamContract(brief: string, current?: string, signal?: AbortSignal) {
   const content = current
     ? `Here is the current contract:\n\n\`\`\`solidity\n${current}\n\`\`\`\n\nChange request: ${brief}`
     : `Brief: ${brief}`;
-  return getClient().beta.messages.stream({
-    model: MODEL,
-    max_tokens: 32000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    output_config: { effort: "medium" },
-    system: [{ type: "text", text: WRITER, cache_control: { type: "ephemeral" } }],
-    messages: [{ role: "user", content }],
-  });
+  const stream = await getClient().chat.completions.create(
+    {
+      model: MODEL,
+      max_completion_tokens: 32000,
+      ...effort("medium"),
+      stream: true,
+      messages: [
+        { role: "system", content: WRITER },
+        { role: "user", content },
+      ],
+    },
+    { signal },
+  );
+  let finish: string | null = null;
+  for await (const chunk of stream) {
+    const choice = chunk.choices[0];
+    if (choice?.delta.content) yield choice.delta.content;
+    if (choice?.delta.refusal) finish = "refusal";
+    if (choice?.finish_reason) finish ??= choice.finish_reason;
+  }
+  if (finish === "refusal" || finish === "content_filter") yield "\n\n- Parlo can't write this one. Try describing it differently.";
+  else if (finish === "length") yield "\n\n- The contract got too long and was cut off. Ask for a simpler version.";
 }
 
 const EXPLAINER = `You explain Solidity to people who have never coded. Given a contract and one line from it, explain what that line does in one or two short sentences of plain English, in the context of this contract. No code, no jargon, no preamble.`;
@@ -44,17 +76,8 @@ const EXPLAINER = `You explain Solidity to people who have never coded. Given a 
 export async function explainLine(source: string, lineNo: number) {
   const lines = source.split("\n");
   const line = lines[lineNo - 1] ?? "";
-  const res = await getClient().beta.messages.create({
-    model: MODEL,
-    max_tokens: 2000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    output_config: { effort: "low" },
-    system: [{ type: "text", text: EXPLAINER, cache_control: { type: "ephemeral" } }],
-    messages: [{ role: "user", content: `Contract:\n\`\`\`solidity\n${source}\n\`\`\`\n\nLine ${lineNo}: ${line.trim()}` }],
-  });
-  if (res.stop_reason === "refusal") return "Parlo can't explain this line.";
-  return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
+  const res = await ask(EXPLAINER, `Contract:\n\`\`\`solidity\n${source}\n\`\`\`\n\nLine ${lineNo}: ${line.trim()}`, 4000);
+  return res.refused || !res.text ? "Parlo can't explain this line." : res.text;
 }
 
 const LAUNCHER = `You write launch material for a new on-chain project, in a confident, honest crypto-native voice. Never promise profits, price moves or returns, and never invent features the contract does not have.
@@ -70,15 +93,7 @@ THREAD
 (three short follow-up posts separated by a line containing only ---)`;
 
 export async function launchKit(source: string, projectName: string) {
-  const res = await getClient().beta.messages.create({
-    model: MODEL,
-    max_tokens: 4000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    output_config: { effort: "low" },
-    system: [{ type: "text", text: LAUNCHER, cache_control: { type: "ephemeral" } }],
-    messages: [{ role: "user", content: `Project name: ${projectName}\n\nContract:\n\`\`\`solidity\n${source}\n\`\`\`` }],
-  });
-  if (res.stop_reason === "refusal") throw new Error("Parlo can't write launch posts for this contract.");
-  return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
+  const res = await ask(LAUNCHER, `Project name: ${projectName}\n\nContract:\n\`\`\`solidity\n${source}\n\`\`\``, 8000);
+  if (res.refused || !res.text) throw new Error("Parlo can't write launch posts for this contract.");
+  return res.text;
 }

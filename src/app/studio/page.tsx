@@ -8,7 +8,7 @@ export default async function StudioPage({ searchParams }: { searchParams: Promi
   const values = Object.fromEntries(Object.entries(rest).filter((e): e is [string, string] => typeof e[1] === "string"));
   return (
     <main className="studio-page">
-      <Studio initialBrief={brief?.slice(0, 4000)} initialTemplate={template} initialValues={values} aiEnabled={Boolean(process.env.ANTHROPIC_API_KEY)} />
+      <Studio initialBrief={brief?.slice(0, 4000)} initialTemplate={template} initialValues={values} aiEnabled={Boolean(process.env.OPENAI_API_KEY)} />
     </main>
   );
 }

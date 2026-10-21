@@ -19,7 +19,7 @@ const CODE: [string, string][][] = [
 const TYPES = ["Tokens", "Tax tokens", "NFT drops", "Vesting", "Vaults", "Airdrops", "Robinhood Chain", "Your wallet, your keys", "No code"];
 
 export default function Home() {
-  const ai = Boolean(process.env.ANTHROPIC_API_KEY);
+  const ai = Boolean(process.env.OPENAI_API_KEY);
   return (
     <main className="home">
       <div className="aurora" aria-hidden>
