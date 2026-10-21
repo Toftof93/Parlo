@@ -37,7 +37,7 @@ export function Studio({ initialBrief, initialTemplate, initialValues, aiEnabled
     started.current = true;
     try {
       const saved = JSON.parse(localStorage.getItem(STORE) ?? "null");
-      if (saved?.source && !initialBrief && !initialTemplate) {
+      if (saved && !initialBrief && !initialTemplate) {
         setSource(saved.source);
         setMessages(saved.messages ?? []);
         setTpl(saved.tpl ?? null);
@@ -45,6 +45,8 @@ export function Studio({ initialBrief, initialTemplate, initialValues, aiEnabled
     } catch {}
     if (initialTemplate && TEMPLATES.some((t) => t.id === initialTemplate)) applyTemplate(initialTemplate, initialValues);
     else if (initialBrief) void send(initialBrief, "");
+    // Drop the brief from the address so a refresh restores the project instead of writing it again.
+    if (initialBrief || initialTemplate) history.replaceState(null, "", "/studio");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
