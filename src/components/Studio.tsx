@@ -409,7 +409,7 @@ function Deploy({ source }: { source: string }) {
 
   const explorer = net.blockExplorers.default.url;
   const share = deployed
-    ? `https://x.com/intent/post?text=${encodeURIComponent(`Just deployed ${target?.name} on ${net.name}, written by AI in plain English with Parlo 🗣\n\n${explorer}/address/${deployed.address}`)}`
+    ? `https://x.com/intent/post?text=${encodeURIComponent(`Just deployed ${target?.name} on ${net.name}, written by AI in plain English with Parlo\n\n${explorer}/address/${deployed.address}`)}`
     : "";
 
   return (
@@ -424,7 +424,7 @@ function Deploy({ source }: { source: string }) {
 
       {result && (
         <div className={`compile ${result.ok ? "ok" : "bad"}`}>
-          <b>{result.ok ? "✓ Compiles" : "✕ Doesn't compile yet"}</b>
+          <b>{result.ok ? "Compiles" : "Doesn't compile yet"}</b>
           {result.diagnostics.length > 0 && (
             <ul>
               {result.diagnostics.slice(0, 8).map((d, i) => (
@@ -482,7 +482,7 @@ function Deploy({ source }: { source: string }) {
       {status && <p className={`status ${status.error ? "err" : ""}`}>{status.text}</p>}
       {deployed && (
         <div className="done">
-          <b>Live on {net.name} 🎉</b>
+          <b>Live on {net.name}.</b>
           <code className="mono">{deployed.address}</code>
           <div className="row">
             <a className="btn" href={`${explorer}/address/${deployed.address}`} target="_blank" rel="noreferrer">
@@ -572,7 +572,7 @@ function CopyButton({ text }: { text: string }) {
         } catch {}
       }}
     >
-      {done ? "Copied ✓" : "Copy"}
+      {done ? "Copied" : "Copy"}
     </button>
   );
 }

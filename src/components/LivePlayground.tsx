@@ -83,7 +83,7 @@ export function LivePlayground() {
         ))}
       </pre>
       <div className="play-foot">
-        <span className="ok">✓ Ready to compile</span>
+        <span className="ok">Ready to compile</span>
         <a className="btn primary" href={open}>
           Open in studio →
         </a>

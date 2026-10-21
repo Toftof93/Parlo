@@ -16,6 +16,13 @@ const CODE: [string, string][][] = [
   [["p", "}"]],
 ];
 
+const PHRASES: [string, string, string][] = [
+  ["Nobody can ever print more.", "// no mint function", "The supply is final the moment it deploys."],
+  ["3% of every trade goes to my wallet. Never more than 5%.", "feeBps = 300; MAX_FEE_BPS = 500;", "The ceiling is a constant. Not even you can raise it."],
+  ["Unlock my team’s tokens slowly over a year.", "duration = 365 days;", "Released a little every second, to one wallet."],
+  ["Send 200 wallets the same amount, in one go.", "drop(address[] to, uint256 amount)", "One transaction instead of two hundred."],
+];
+
 const TYPES = ["Tokens", "Tax tokens", "NFT drops", "Vesting", "Vaults", "Airdrops", "Robinhood Chain", "Your wallet, your keys", "No code"];
 
 export default function Home() {
@@ -61,7 +68,7 @@ export default function Home() {
         </div>
         <div className="hero-visual">
           <LivePlayground />
-          <p className="try-it">↑ Try it. Edit the boxes and the contract rewrites itself.</p>
+          <p className="try-it">Go on, edit the boxes. The contract rewrites itself.</p>
         </div>
       </section>
 
@@ -69,29 +76,33 @@ export default function Home() {
         <div className="track">
           {[...TYPES, ...TYPES].map((t, i) => (
             <span key={i}>
-              {t} <b>✦</b>
+              {t}
+              <i className="sep" />
             </span>
           ))}
         </div>
       </div>
 
-      <section className="stats">
-        <div>
-          <b>6</b>
-          <span>tested contract templates</span>
+      <section className="phrasebook">
+        <div className="pb-head">
+          <p className="eyebrow">The phrasebook</p>
+          <h2>
+            Parlo speaks <em>both languages.</em>
+          </h2>
+          <p className="lead small-lead">You say it the way you’d say it to a friend. Parlo says it the way the chain needs to hear it.</p>
         </div>
-        <div>
-          <b>0</b>
-          <span>lines of code to write</span>
-        </div>
-        <div>
-          <b>1</b>
-          <span>click to compile</span>
-        </div>
-        <div>
-          <b>100%</b>
-          <span>your keys, your contract</span>
-        </div>
+        <ol className="pb-rows">
+          {PHRASES.map(([say, code, note], i) => (
+            <li key={i}>
+              <span className="pb-say">“{say}”</span>
+              <span className="pb-wire" aria-hidden />
+              <span className="pb-code">
+                <code>{code}</code>
+                <small>{note}</small>
+              </span>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <section id="how" className="how">
@@ -169,30 +180,74 @@ export default function Home() {
       </section>
 
       <section className="features">
-        <div className="feature big">
-          <span className="tag">Free</span>
-          <h3>Launch Kit</h3>
-          <p>Your contract is only half a launch. Parlo writes your tagline, X bio, launch post and follow-up thread. Honest copy, no price promises.</p>
+        <div className="feature big kit">
+          <span className="tag">Launch Kit · free</span>
+          <div className="kit-stack" aria-hidden>
+            <div className="kc">
+              <small>Tagline</small>Your coin. Your rules. Your chain.
+            </div>
+            <div className="kc">
+              <small>X bio</small>A fixed-supply token on Robinhood Chain. No mint, no tricks.
+            </div>
+            <div className="kc">
+              <small>Launch post</small>MOON is live on Robinhood Chain.
+              <br />
+              CA: [paste here]
+            </div>
+          </div>
+          <h3>The words, too.</h3>
+          <p>A contract is only half a launch. Parlo writes your tagline, bio, launch post and thread from what your contract actually does. No moon promises.</p>
         </div>
-        <div className="feature">
-          <span className="ico">🛡</span>
-          <h3>Safe by default</h3>
-          <p>No hidden mint, blacklist or tax switches. Fees are hard-capped in the code.</p>
+
+        <div className="feature cap">
+          <div className="fee-rail" aria-hidden>
+            <span className="fill" />
+            <span className="knob">fee</span>
+            <span className="wall">
+              <b>5%</b> max
+            </span>
+          </div>
+          <h3>Fees with a ceiling.</h3>
+          <p>No hidden mint, blacklist or tax switch. A fee can move, but never past the cap written into the code.</p>
         </div>
-        <div className="feature">
-          <span className="ico">✓</span>
-          <h3>Templates that compile</h3>
-          <p>Every template is tested to compile, even with strange inputs.</p>
+
+        <div className="feature tested">
+          <ul className="receipt" aria-hidden>
+            {["Token", "Tax token", "NFT drop", "Vesting", "Vault", "Airdrop"].map((n, i) => (
+              <li key={n} style={{ animationDelay: `${i * 0.15}s` }}>
+                <span>{n}</span>
+                <i />
+                <b>compiled</b>
+              </li>
+            ))}
+          </ul>
+          <h3>Tested to the last semicolon.</h3>
+          <p>All six templates compile, even when someone types nonsense into the boxes.</p>
         </div>
-        <div className="feature">
-          <span className="ico">🔑</span>
-          <h3>Your keys, your contract</h3>
-          <p>Parlo never touches your wallet. You review everything and sign yourself.</p>
+
+        <div className="feature pen">
+          <div className="sign" aria-hidden>
+            <small>Your wallet</small>
+            <span>Deploy MoonCoin</span>
+            <div>
+              <em>Reject</em>
+              <em className="go">Sign</em>
+            </div>
+          </div>
+          <h3>Only you hold the pen.</h3>
+          <p>Parlo never touches your wallet or keys. Nothing goes on-chain until you press sign.</p>
         </div>
-        <div className="feature">
-          <span className="ico">↗</span>
-          <h3>Share the moment</h3>
-          <p>Deployed? Post it on X with one tap and a link to your live contract.</p>
+
+        <div className="feature brag">
+          <div className="post" aria-hidden>
+            <i />
+            <p>
+              Just deployed <b>MoonCoin</b> on Robinhood Chain. Written in plain English with Parlo.
+              <u>explorer/0x7a…c3</u>
+            </p>
+          </div>
+          <h3>Brag in one tap.</h3>
+          <p>Deployed? Post it on X with a link to your live contract.</p>
         </div>
       </section>
 
