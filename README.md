@@ -27,7 +27,7 @@ npm test
 |---|---|
 | `ANTHROPIC_API_KEY` | Turns on writing, explanations and the Launch Kit. Without it, templates, compile and deploy still work. |
 | `PARLO_DAILY_LIMIT` | Free AI requests per visitor per day (default 10) |
-| `NEXT_PUBLIC_SITE_URL` | Public URL for share links (default https://useparlo.xyz) |
+| `NEXT_PUBLIC_SITE_URL` | Public URL for share links (default https://useparlo.vercel.app) |
 
 The AI runs on Claude Opus 5.5 with server-side refusal fallbacks and prompt caching on the fixed system prompts.
 
