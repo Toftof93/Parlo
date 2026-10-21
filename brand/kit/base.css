@@ -1,0 +1,8 @@
+@font-face { font-family: "IS"; src: url("../../node_modules/@fontsource/instrument-serif/files/instrument-serif-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "IS"; font-style: italic; src: url("../../node_modules/@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2") format("woff2"); }
+@font-face { font-family: "GS"; src: url("../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "GM"; src: url("../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; }
+* { margin: 0; box-sizing: border-box; }
+:root { --paper: #f4f1ea; --card: #fbfaf6; --ink: #16150f; --accent: #3440ff; --muted: #7a766a; }
+body { background: var(--paper); color: var(--ink); font-family: "GS", sans-serif; position: relative; overflow: hidden; }
+.glow { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(52,64,255,.12), transparent 70%); }
