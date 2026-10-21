@@ -21,7 +21,7 @@ declare global {
   }
 }
 
-export function Studio({ initialBrief, initialTemplate, aiEnabled }: { initialBrief?: string; initialTemplate?: string; aiEnabled: boolean }) {
+export function Studio({ initialBrief, initialTemplate, initialValues, aiEnabled }: { initialBrief?: string; initialTemplate?: string; initialValues?: Values; aiEnabled: boolean }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [source, setSource] = useState("");
   const [input, setInput] = useState("");
@@ -43,7 +43,7 @@ export function Studio({ initialBrief, initialTemplate, aiEnabled }: { initialBr
         setTpl(saved.tpl ?? null);
       }
     } catch {}
-    if (initialTemplate && TEMPLATES.some((t) => t.id === initialTemplate)) applyTemplate(initialTemplate);
+    if (initialTemplate && TEMPLATES.some((t) => t.id === initialTemplate)) applyTemplate(initialTemplate, initialValues);
     else if (initialBrief) void send(initialBrief, "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -98,10 +98,13 @@ export function Studio({ initialBrief, initialTemplate, aiEnabled }: { initialBr
     }
   }
 
-  function applyTemplate(id: string) {
+  function applyTemplate(id: string, preset?: Values) {
     const t = TEMPLATES.find((x) => x.id === id)!;
-    setTpl({ id, values: { ...t.defaults } });
-    setSource(t.build(t.defaults));
+    // Only accept the template's own fields from a preset (e.g. from the homepage playground).
+    const values = { ...t.defaults };
+    for (const f of t.fields) if (preset?.[f.key] !== undefined) values[f.key] = String(preset[f.key]).slice(0, 60);
+    setTpl({ id, values });
+    setSource(t.build(values));
     const next = t.fields.length ? "Set it up with the boxes above the code." : "It works as it is. No settings needed.";
     setMessages((m) => [...m, { role: "you", text: `Start from: ${t.name}` }, { role: "parlo", text: `- ${t.blurb}\n- ${next}${aiEnabled ? "\n- Or ask me to change anything." : ""}` }]);
     setTab("code");
